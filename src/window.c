@@ -6,7 +6,145 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
+void
+main_loop (int argc, char *argv)
+{
+    WINDOW *win, *explorer;
+    Buffer *buf;
+    int max_x, max_y, scroll_pos;
+    char *res;
+
+    max_x = max_y = scroll_pos = 0;
+
+    if (argc == 1)
+        {
+            fputs ("less: No file to open\n", stderr);
+            return;
+        }
+
+    init_window ();
+    getmaxyx (stdscr, max_y, max_x);
+    win = new_window (argv);
+    buf = load_file (win, argv, max_x);
+    draw (win, buf, getmaxx (win), 0);
+    print_keys (win);
+    print_title (win, argv);
+
+    int ch = 'j';
+    while ((ch = getch ()) != 'q' || res != NULL)
+        {
+            switch (ch)
+                {
+                case ' ':
+                    scroll_pos = 0;
+                    res = create_explorer (win, buf, getmaxx (win),
+                                           scroll_pos);
+                    if (res != NULL)
+                        {
+                            free_buffer (buf); // Free the current buffer
+                            end_window (win);
+                            win = new_window (res); // Open the selected file
+                            buf = load_file (
+                                win, res,
+                                getmaxx (win)); // Load the selected file
+                            draw (win, buf, getmaxx (win), scroll_pos);
+                            clear ();
+                            print_keys (win);
+                            strcpy (argv, res);
+                            print_title (win, argv);
+                            free (res);
+
+                            wclear (win);
+                            refresh ();
+                            wrefresh (win);
+                            draw (win, buf, getmaxx (win), scroll_pos);
+                        }
+                    else
+                        {
+                            delete_explorer (explorer);
+                        }
+                    /*scroll_pos = 0;
+                    res = create_explorer (win, buf, getmaxx (win),
+                                           scroll_pos); */
+                case 'k':
+                    if (scroll_pos > 0)
+                        {
+                            delete_explorer (explorer);
+                            scroll_pos -= 1;
+                            draw (win, buf, getmaxx (win), scroll_pos);
+                        }
+                    break;
+                case 'K':
+                    if (scroll_pos > 0)
+                        {
+                            delete_explorer (explorer);
+                            scroll_pos -= 10;
+                            draw (win, buf, getmaxx (win), scroll_pos);
+                        }
+                    break;
+
+                case 'j':
+                    if (scroll_pos + getmaxy (win) - 1 < buf->n)
+                        {
+                            delete_explorer (explorer);
+                            scroll_pos += 1;
+                            draw (win, buf, getmaxx (win), scroll_pos);
+                        }
+                    break;
+                case 'J':
+                    if (scroll_pos + getmaxy (win) - 1 < buf->n > 0)
+                        {
+                            delete_explorer (explorer);
+                            scroll_pos += 10;
+                            draw (win, buf, getmaxx (win), scroll_pos);
+                        }
+                    break;
+
+                case '+':
+                    delete_explorer (explorer);
+                    endwin ();
+                    refresh ();
+                    win = new_window (argv);
+                    print_keys (win);
+                    draw (win, buf, getmaxx (win), scroll_pos);
+                    print_title (win, argv);
+                    break;
+                case '-':
+                    delete_explorer (explorer);
+                    endwin ();
+                    refresh ();
+                    win = new_window (argv);
+                    print_keys (win);
+                    draw (win, buf, getmaxx (win), scroll_pos);
+                    print_title (win, argv);
+                    break;
+
+                case 'r':
+                    delete_explorer (explorer);
+                    endwin ();
+                    refresh ();
+                    win = new_window (argv);
+                    print_keys (win);
+                    draw (win, buf, getmaxx (win), scroll_pos);
+                    print_title (win, argv);
+                    break;
+                default:
+                    print_title (win, argv);
+                    print_keys (win);
+                    break;
+                }
+        }
+
+    free_buffer (buf);
+    end_window (win);
+    refresh ();
+    wrefresh (stdscr);
+    if (res != NULL)
+        main_loop (argc, res);
+    endwin ();
+}
 char **
 getAllFilesInCurrentDirectory ()
 {
@@ -56,15 +194,15 @@ getAllFilesInCurrentDirectory ()
     return fileList;
 }
 
-void
+char *
 create_explorer (WINDOW *w, Buffer *buf, int max_x, int start_line)
 {
     WINDOW *win;
     MENU *menu;
     ITEM **items;
-    int start_x, start_y, n;
+    int start_x, start_y, n, dir_index;
     start_x = start_y = 0;
-    char **dirs, ch, help[] = "w: quit | d: up | f: down";
+    char **dirs, *res, ch, help[] = "w: quit | d: up | f: down";
 
     getmaxyx (w, start_y, start_x);
 
@@ -102,14 +240,27 @@ create_explorer (WINDOW *w, Buffer *buf, int max_x, int start_line)
     wrefresh (win);
     nodelay (win, FALSE);
 
+    dir_index = 0;
+
     while ((ch = getch ()) != 'w')
         {
             switch (ch)
                 {
+                case 10:
+                    menu_driver (menu, REQ_UP_ITEM);
+                    res = (char *)malloc (sizeof (char)
+                                          * strlen (dirs[dir_index]));
+                    strcpy (res, dirs[dir_index]);
+                    return res;
+                    break;
                 case 'd':
                     menu_driver (menu, REQ_UP_ITEM);
+                    if (dir_index > 0)
+                        dir_index--;
                     break;
                 case 'f':
+                    if (dir_index < n)
+                        dir_index++;
                     menu_driver (menu, REQ_DOWN_ITEM);
                     break;
                 case 'w':
@@ -144,6 +295,7 @@ create_explorer (WINDOW *w, Buffer *buf, int max_x, int start_line)
     wrefresh (stdscr);
     wrefresh (w);
     refresh ();
+    return NULL;
 }
 
 void

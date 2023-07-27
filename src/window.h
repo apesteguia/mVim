@@ -24,7 +24,8 @@ typedef struct buffer
 } Buffer;
 
 WINDOW *new_window (char *);
-void create_explorer (WINDOW *w, Buffer *, int, int);
+void main_loop (int, char *);
+char *create_explorer (WINDOW *w, Buffer *, int, int);
 void delete_explorer (WINDOW *win);
 void init_window ();
 void print_title (WINDOW *win, char *file);
