@@ -1,4 +1,5 @@
 #include "window.h"
+#include <curses.h>
 #include <ncurses.h>
 #include <unistd.h>
 
@@ -15,7 +16,17 @@ main (int argc, char **argv)
 
     load_file (win, argv[1], max_x);
 
-    sleep (2);
+    while ((ch = wgetch (win)) != 'q')
+        {
+            if (ch == 'j')
+                {
+                    wscrl (win, 1);
+                }
+            if (ch == 'k')
+                {
+                    wscrl (win, -1);
+                }
+        }
 
     end_window (win);
     return 0;
