@@ -13,7 +13,7 @@ new_window (char *file)
     start_x = start_y = 0;
 
     getmaxyx (stdscr, start_y, start_x);
-    win = newwin (start_y - 5, start_x - 2, 3, 2);
+    win = newwin (start_y - 5, start_x - 2, 3, 1);
     box (win, 0, 0);
     scrollok (win, TRUE);
     wrefresh (win);
@@ -51,7 +51,7 @@ init_window ()
     cbreak ();
     noecho ();
     start_color ();
-    curs_set (1);
+    curs_set (0);
     init_pair (1, COLOR_WHITE, COLOR_BLACK);
     refresh ();
 }
@@ -100,6 +100,7 @@ load_file (WINDOW *win, char *path, int max_x)
     return buf; // Return the created Buffer*
 }
 
+/*
 void
 draw (WINDOW *win, Buffer *buf, int max_x, int start_line)
 {
@@ -121,6 +122,46 @@ draw (WINDOW *win, Buffer *buf, int max_x, int start_line)
             waddstr (win, current_line->content);
             current_line = current_line->next;
             y++;
+        }
+
+    for (; y <= content_height; y++)
+        {
+            wmove (win, y, 0);
+            wclrtoeol (win);
+        }
+
+    scrollok (win, TRUE);
+
+    wrefresh (win);
+} */
+
+void
+draw (WINDOW *win, Buffer *buf, int max_x, int start_line)
+{
+    werase (win);
+    wmove (win, 0, 0);
+
+    Line *current_line = buf->head;
+    for (int i = 0; i < start_line && current_line != NULL; i++)
+        {
+            current_line = current_line->next;
+        }
+
+    int y = 1;
+    int content_height = getmaxy (win) - 1;
+    int line_number = start_line + 1;
+
+    while (y <= content_height && current_line != NULL)
+        {
+            wmove (win, y, 0);
+
+            // Print line number and content
+            mvwprintw (win, y, 0, "%3d  %s", line_number,
+                       current_line->content);
+
+            current_line = current_line->next;
+            y++;
+            line_number++;
         }
 
     for (; y <= content_height; y++)

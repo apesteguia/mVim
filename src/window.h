@@ -8,6 +8,7 @@
 typedef struct line
 {
     char content[MAXLEN];
+    int n;
     struct line *prev;
     struct line *next;
 } Line;
