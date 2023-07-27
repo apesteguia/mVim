@@ -22,6 +22,7 @@ typedef struct buffer
 
 WINDOW *new_window (char *);
 void init_window ();
+void print_title (WINDOW *win, char *file);
 void end_window (WINDOW *);
 Buffer *load_file (WINDOW *, char *, int);
 void scrollWindow (WINDOW *, int *);
