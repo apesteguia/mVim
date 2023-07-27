@@ -13,20 +13,35 @@ new_window (char *file)
     start_x = start_y = 0;
 
     getmaxyx (stdscr, start_y, start_x);
-    win = newwin (start_y - 1, start_x - 2, 3, 2);
+    win = newwin (start_y - 5, start_x - 2, 3, 2);
     box (win, 0, 0);
     scrollok (win, TRUE);
     wrefresh (win);
     refresh ();
     return win;
 }
+
 void
 print_title (WINDOW *win, char *file)
 {
     init_pair (3, COLOR_BLUE, COLOR_BLACK);
-    wattron (stdscr, COLOR_PAIR (3));
+    wattron (stdscr, COLOR_PAIR (3) | A_BOLD);
     mvprintw (1, 1, "%s", file);
-    wattroff (stdscr, COLOR_PAIR (3));
+    wattroff (stdscr, COLOR_PAIR (3) | A_BOLD);
+}
+
+void
+print_keys (WINDOW *win)
+{
+    int x, y;
+    x = y = 0;
+
+    init_pair (3, COLOR_BLUE, COLOR_BLACK);
+    wattron (stdscr, COLOR_PAIR (3) | A_BOLD);
+    getmaxyx (stdscr, y, x);
+    mvprintw (y - 2, 1, "%s",
+              "r: refresh | j,J: 1up/10 | k,K: 1down/10 | q: quit");
+    wattroff (stdscr, COLOR_PAIR (3) | A_BOLD);
 }
 
 void
@@ -46,10 +61,7 @@ end_window (WINDOW *win)
     delwin (win);
     endwin ();
 }
-// "█"
-//
 
-// Modify the load_file function to return a Buffer*
 Buffer *
 load_file (WINDOW *win, char *path, int max_x)
 {
@@ -100,8 +112,8 @@ draw (WINDOW *win, Buffer *buf, int max_x, int start_line)
             current_line = current_line->next;
         }
 
-    int y = 1; // Start at y=1 to leave one line for the title
-    int content_height = getmaxy (win) - 1; // The height of the content area
+    int y = 1;
+    int content_height = getmaxy (win) - 1;
 
     while (y <= content_height && current_line != NULL)
         {
@@ -111,41 +123,16 @@ draw (WINDOW *win, Buffer *buf, int max_x, int start_line)
             y++;
         }
 
-    // If there are fewer lines than content_height, fill the remaining lines
-    // with empty lines
     for (; y <= content_height; y++)
         {
             wmove (win, y, 0);
             wclrtoeol (win);
         }
 
-    // Enable automatic scrolling within the window
     scrollok (win, TRUE);
 
     wrefresh (win);
 }
-
-/*
-void
-draw (WINDOW *win, Buffer *buf, int max_x, int start_line)
-{
-    werase (win);
-    wmove (win, 0, 0);
-
-    Line *current_line = buf->head;
-    for (int i = 0; i < start_line && current_line != NULL; i++)
-        {
-            current_line = current_line->next;
-        }
-
-    for (int i = 0; i < max_x && current_line != NULL; i++)
-        {
-            waddstr (win, current_line->content);
-            current_line = current_line->next;
-        }
-
-    wrefresh (win);
-} */
 
 void
 free_buffer (Buffer *buf)
