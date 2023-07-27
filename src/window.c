@@ -1,16 +1,70 @@
 #include "window.h"
 #include <curses.h>
+#include <dirent.h>
 #include <menu.h>
 #include <ncurses.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-WINDOW *
-create_explorer (WINDOW *w)
+char **
+getAllFilesInCurrentDirectory ()
+{
+    char **fileList = NULL;
+    int fileCount = 0;
+
+    DIR *dir = opendir (".");
+    if (dir == NULL)
+        {
+            perror ("Unable to open directory");
+            return NULL;
+        }
+
+    struct dirent *entry;
+    while ((entry = readdir (dir)) != NULL)
+        {
+            if (entry->d_type == DT_REG)
+                {
+                    fileCount++;
+                }
+        }
+
+    fileList = (char **)malloc ((fileCount + 1) * sizeof (char *));
+    if (fileList == NULL)
+        {
+            closedir (dir);
+            perror ("Memory allocation error");
+            return NULL;
+        }
+
+    rewinddir (dir);
+
+    int i = 0;
+    while ((entry = readdir (dir)) != NULL)
+        {
+            if (entry->d_type == DT_REG)
+                {
+                    fileList[i] = strdup (entry->d_name);
+                    i++;
+                }
+        }
+
+    fileList[fileCount] = NULL;
+
+    closedir (dir);
+
+    return fileList;
+}
+
+void
+create_explorer (WINDOW *w, Buffer *buf, int max_x, int start_line)
 {
     WINDOW *win;
-    int start_x, start_y;
+    MENU *menu;
+    ITEM **items;
+    int start_x, start_y, n;
     start_x = start_y = 0;
+    char **dirs, ch, help[] = "w: quit | d: up | f: down";
 
     getmaxyx (w, start_y, start_x);
 
@@ -20,10 +74,76 @@ create_explorer (WINDOW *w)
     wattron (win, COLOR_PAIR (3) | A_BOLD);
 
     mvwprintw (win, 0, (getmaxx (win) - strlen ("Explorer")) / 2, "Explorer");
+    mvwprintw (win, getmaxy (win) - 1, (getmaxx (win) - strlen (help)) / 2,
+               "%s", help);
     wattroff (win, COLOR_PAIR (3) | A_BOLD);
 
+    dirs = getAllFilesInCurrentDirectory ();
+    n = 0;
+    while (dirs[n] != NULL)
+        {
+            n++;
+        }
+
+    items = (ITEM **)malloc (n * sizeof (ITEM) + 1);
+    for (int i = 0; i < n; i++)
+        {
+            items[i] = new_item (dirs[i], NULL);
+        }
+    items[n] = NULL;
+
+    menu = new_menu (items);
+    set_menu_win (menu, win);
+    set_menu_sub (menu, derwin (win, n, start_x / 3, 1, 1));
+    set_menu_format (menu, n, 1);
+    set_menu_mark (menu, "->");
+    post_menu (menu);
+
     wrefresh (win);
-    return win;
+    nodelay (win, FALSE);
+
+    while ((ch = getch ()) != 'w')
+        {
+            switch (ch)
+                {
+                case 'd':
+                    menu_driver (menu, REQ_UP_ITEM);
+                    break;
+                case 'f':
+                    menu_driver (menu, REQ_DOWN_ITEM);
+                    break;
+                case 'w':
+                    unpost_menu (menu);
+                    free_menu (menu);
+                    for (int i = 0; i < n; i++)
+                        {
+                            free_item (items[i]);
+                            free (dirs[i]);
+                        }
+                    free (items);
+                    free (dirs);
+                    delwin (win);
+
+                    break;
+                }
+            wrefresh (win);
+        }
+
+    unpost_menu (menu);
+    free_menu (menu);
+    for (int i = 0; i < n; i++)
+        {
+            free_item (items[i]);
+            free (dirs[i]);
+        }
+    free (items);
+    free (dirs);
+    wrefresh (win);
+    delwin (win);
+    draw (w, buf, max_x, start_line);
+    wrefresh (stdscr);
+    wrefresh (w);
+    refresh ();
 }
 
 void
@@ -76,6 +196,7 @@ void
 init_window ()
 {
     initscr ();
+    keypad (stdscr, TRUE);
     cbreak ();
     noecho ();
     start_color ();

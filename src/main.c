@@ -28,18 +28,17 @@ main (int argc, char **argv)
     print_title (win, argv[1]);
 
     int ch = 'j';
-    int ch2;
     while ((ch = getch ()) != 'q')
         {
             switch (ch)
                 {
                 case ' ':
                     scroll_pos = 0;
-                    explorer = create_explorer (win);
+                    create_explorer (win, buf, getmaxx (win), scroll_pos);
                 case 'k':
                     if (scroll_pos > 0)
                         {
-                            // delete_explorer (explorer);
+                            delete_explorer (explorer);
                             scroll_pos -= 1;
                             draw (win, buf, getmaxx (win), scroll_pos);
                         }
@@ -47,7 +46,7 @@ main (int argc, char **argv)
                 case 'K':
                     if (scroll_pos > 0)
                         {
-                            // delete_explorer (explorer);
+                            delete_explorer (explorer);
                             scroll_pos -= 10;
                             draw (win, buf, getmaxx (win), scroll_pos);
                         }
@@ -56,7 +55,7 @@ main (int argc, char **argv)
                 case 'j':
                     if (scroll_pos + getmaxy (win) - 1 < buf->n)
                         {
-                            // delete_explorer (explorer);
+                            delete_explorer (explorer);
                             scroll_pos += 1;
                             draw (win, buf, getmaxx (win), scroll_pos);
                         }
@@ -64,10 +63,29 @@ main (int argc, char **argv)
                 case 'J':
                     if (scroll_pos + getmaxy (win) - 1 < buf->n > 0)
                         {
-                            // delete_explorer (explorer);
+                            delete_explorer (explorer);
                             scroll_pos += 10;
                             draw (win, buf, getmaxx (win), scroll_pos);
                         }
+                    break;
+
+                case '+':
+                    delete_explorer (explorer);
+                    endwin ();
+                    refresh ();
+                    win = new_window (argv[1]);
+                    print_keys (win);
+                    draw (win, buf, getmaxx (win), scroll_pos);
+                    print_title (win, argv[1]);
+                    break;
+                case '-':
+                    delete_explorer (explorer);
+                    endwin ();
+                    refresh ();
+                    win = new_window (argv[1]);
+                    print_keys (win);
+                    draw (win, buf, getmaxx (win), scroll_pos);
+                    print_title (win, argv[1]);
                     break;
 
                 case 'r':
