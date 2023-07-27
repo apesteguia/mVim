@@ -1,33 +1,49 @@
 #include "window.h"
-#include <curses.h>
 #include <ncurses.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 int
 main (int argc, char **argv)
 {
     WINDOW *win;
-    int max_y, max_x, scrollPos = 0;
-    char ch;
+    Buffer *buf;
+    int max_x, max_y;
+
+    max_x = max_y = 0;
+    if (argc == 1)
+        {
+            fputs ("less: No file to open\n", stderr);
+            return 1;
+        }
 
     init_window ();
     win = new_window (argv[1]);
-    getmaxyx (win, max_y, max_x);
 
-    load_file (win, argv[1], max_x);
+    load_file (win, buf, argv[1], max_x);
 
-    while ((ch = wgetch (win)) != 'q')
+    draw (win, buf, max_x);
+
+    sleep (2);
+    int ch;
+    /*while ((ch = getch ()) != EOF && ch != 'q')
         {
-            if (ch == 'j')
+            if (ch == KEY_UP && buf->curr->prev != NULL)
                 {
-                    wscrl (win, 1);
+                    buf->curr_line--;
+                    buf->curr = buf->curr->prev;
+                    draw (win, buf, max_x);
                 }
-            if (ch == 'k')
+            else if (ch == KEY_DOWN && buf->curr->next != NULL
+                     && buf->curr_line + max_x < buf->n)
                 {
-                    wscrl (win, -1);
+                    buf->curr_line++;
+                    buf->curr = buf->curr->next;
+                    draw (win, buf, max_x);
                 }
         }
-
-    end_window (win);
+    */
+    free_buffer (buf);
+    endwin ();
     return 0;
 }
