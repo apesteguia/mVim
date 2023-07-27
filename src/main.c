@@ -1,4 +1,10 @@
+// window.h (No changes needed)
+
+// window.c (No changes needed)
+
+// main.c
 #include "window.h"
+#include <curses.h>
 #include <ncurses.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -8,9 +14,10 @@ main (int argc, char **argv)
 {
     WINDOW *win;
     Buffer *buf;
-    int max_x, max_y;
+    int max_x, max_y, scroll_pos;
 
-    max_x = max_y = 0;
+    max_x = max_y = scroll_pos = 0;
+
     if (argc == 1)
         {
             fputs ("less: No file to open\n", stderr);
@@ -18,32 +25,40 @@ main (int argc, char **argv)
         }
 
     init_window ();
+    getmaxyx (stdscr, max_y, max_x); // Get terminal dimensions
     win = new_window (argv[1]);
 
-    load_file (win, buf, argv[1], max_x);
+    buf = load_file (win, argv[1], max_x);
 
-    draw (win, buf, max_x);
-
-    sleep (2);
+    draw (win, buf, max_x, 0);
     int ch;
-    /*while ((ch = getch ()) != EOF && ch != 'q')
+
+    while ((ch = getch ()) != 'q')
         {
-            if (ch == KEY_UP && buf->curr->prev != NULL)
+            switch (ch)
                 {
-                    buf->curr_line--;
-                    buf->curr = buf->curr->prev;
-                    draw (win, buf, max_x);
+                case KEY_UP:
+                    if (scroll_pos > 0)
+                        {
+                            scroll_pos--;
+                            draw (win, buf, max_x, scroll_pos);
+                        }
+                    break;
+                case KEY_DOWN:
+                    if (scroll_pos + max_y < buf->n)
+                        {
+                            scroll_pos++;
+                            draw (win, buf, max_x, scroll_pos);
+                        }
+                    break;
+                default:
+                    break;
                 }
-            else if (ch == KEY_DOWN && buf->curr->next != NULL
-                     && buf->curr_line + max_x < buf->n)
-                {
-                    buf->curr_line++;
-                    buf->curr = buf->curr->next;
-                    draw (win, buf, max_x);
-                }
+            getmaxyx (stdscr, max_y,
+                      max_x); // Update terminal dimensions in case of resize
         }
-    */
+
     free_buffer (buf);
-    endwin ();
+    end_window (win);
     return 0;
 }

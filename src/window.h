@@ -3,8 +3,6 @@
 
 #include <ncurses.h>
 
-#define MAX_HEIGHT 2000
-#define N 1000
 #define MAXLEN 256
 
 typedef struct line
@@ -25,9 +23,9 @@ typedef struct buffer
 WINDOW *new_window (char *);
 void init_window ();
 void end_window (WINDOW *);
-void load_file (WINDOW *, Buffer *, char *, int);
+Buffer *load_file (WINDOW *, char *, int);
 void scrollWindow (WINDOW *, int *);
-void draw (WINDOW *, Buffer *, int);
+void draw (WINDOW *, Buffer *, int, int);
 void free_buffer (Buffer *);
 
 #endif // MAG_EDITOR_H
