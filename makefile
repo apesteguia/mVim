@@ -8,11 +8,11 @@ BINDIR = bin
 
 SRC = $(wildcard $(SRCDIR)/*.c)
 OBJ = $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
-EXECUTABLE = $(BINDIR)/program
+EXECUTABLE = $(BINDIR)/msee
 
-all: program
+all: msee 
 
-program: $(OBJ)
+msee: $(OBJ)
 	$(CC) $(CFLAGS) $^ -o $(EXECUTABLE) $(LDFLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
