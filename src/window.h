@@ -4,6 +4,8 @@
 #include <ncurses.h>
 
 #define MAXLEN 256
+#define MAX_EXP_Y 10
+#define MAX_EXP_X 30
 
 typedef struct line
 {
@@ -22,6 +24,8 @@ typedef struct buffer
 } Buffer;
 
 WINDOW *new_window (char *);
+WINDOW *create_explorer (WINDOW *w);
+void delete_explorer (WINDOW *win);
 void init_window ();
 void print_title (WINDOW *win, char *file);
 void print_keys (WINDOW *win);

@@ -1,8 +1,36 @@
 #include "window.h"
 #include <curses.h>
+#include <menu.h>
 #include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
+
+WINDOW *
+create_explorer (WINDOW *w)
+{
+    WINDOW *win;
+    int start_x, start_y;
+    start_x = start_y = 0;
+
+    getmaxyx (w, start_y, start_x);
+
+    win = newwin (start_y - 10, start_x / 2, 5, (start_x) / 4);
+
+    box (win, 0, 0);
+    wattron (win, COLOR_PAIR (3) | A_BOLD);
+
+    mvwprintw (win, 0, (getmaxx (win) - strlen ("Explorer")) / 2, "Explorer");
+    wattroff (win, COLOR_PAIR (3) | A_BOLD);
+
+    wrefresh (win);
+    return win;
+}
+
+void
+delete_explorer (WINDOW *win)
+{
+    delwin (win);
+}
 
 WINDOW *
 new_window (char *file)
@@ -99,41 +127,6 @@ load_file (WINDOW *win, char *path, int max_x)
     fclose (f);
     return buf; // Return the created Buffer*
 }
-
-/*
-void
-draw (WINDOW *win, Buffer *buf, int max_x, int start_line)
-{
-    werase (win);
-    wmove (win, 0, 0);
-
-    Line *current_line = buf->head;
-    for (int i = 0; i < start_line && current_line != NULL; i++)
-        {
-            current_line = current_line->next;
-        }
-
-    int y = 1;
-    int content_height = getmaxy (win) - 1;
-
-    while (y <= content_height && current_line != NULL)
-        {
-            wmove (win, y, 0); // Move the cursor to the current line
-            waddstr (win, current_line->content);
-            current_line = current_line->next;
-            y++;
-        }
-
-    for (; y <= content_height; y++)
-        {
-            wmove (win, y, 0);
-            wclrtoeol (win);
-        }
-
-    scrollok (win, TRUE);
-
-    wrefresh (win);
-} */
 
 void
 draw (WINDOW *win, Buffer *buf, int max_x, int start_line)
