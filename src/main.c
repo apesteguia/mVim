@@ -26,44 +26,38 @@ main (int argc, char **argv)
 
     buf = load_file (win, argv[1], max_x);
 
-    draw (win, buf, max_x, 0);
-    int ch;
+    draw (win, buf, getmaxx (win), 0);
 
+    int ch;
     while ((ch = getch ()) != 'q')
         {
-            if (ch == KEY_RESIZE)
+            switch (ch)
                 {
+                case 'k':
+                    if (scroll_pos > 0)
+                        {
+                            scroll_pos -= 1;
+                            draw (win, buf, getmaxx (win), scroll_pos);
+                        }
+                    break;
+                case 'j':
+                    if (scroll_pos + getmaxy (win) - 1 < buf->n)
+                        {
+                            scroll_pos += 1;
+                            draw (win, buf, getmaxx (win), scroll_pos);
+                        }
+                    break;
+                case 'r':
                     endwin ();
                     refresh ();
                     win = new_window (argv[1]);
                     print_title (win, argv[1]);
-                    draw (win, buf, max_x,
+                    draw (win, buf, getmaxx (win),
                           scroll_pos); // Redraw the content after resizing
-                }
-            else
-                {
-                    switch (ch)
-                        {
-                        case KEY_UP:
-                            if (scroll_pos > 0)
-                                {
-                                    scroll_pos -= 10;
-                                    wscrl (win, -10); // Scroll the content up
-                                    wrefresh (win);
-                                }
-                            break;
-                        case KEY_DOWN:
-                            if (scroll_pos + getmaxy (win) - 1 < buf->n)
-                                {
-                                    scroll_pos += 10;
-                                    wscrl (win, 10); // Scroll the content down
-                                    wrefresh (win);
-                                }
-                            break;
-                        default:
-                            print_title (win, argv[1]);
-                            break;
-                        }
+                    break;
+                default:
+                    print_title (win, argv[1]);
+                    break;
                 }
         }
 
