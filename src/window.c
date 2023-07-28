@@ -9,6 +9,22 @@
 #include <string.h>
 #include <unistd.h>
 
+void
+write_file (Buffer *buf, char *path)
+{
+    FILE *f;
+    Line *aux = buf->head;
+    f = fopen (path, "w");
+
+    while (aux != NULL)
+        {
+            fprintf (f, "%s", aux->content);
+            aux = aux->next;
+        }
+
+    fclose (f);
+}
+
 bool
 is_line_spaces (char *line)
 {
@@ -120,6 +136,8 @@ main_loop (int argc, char *argv)
                     /*scroll_pos = 0;
                     res = create_explorer (win, buf, getmaxx (win),
                                            scroll_pos); */
+                case 'c':
+                    write_file (buf, argv);
                 case KEY_BACKSPACE:
                     remove_char (&buf, m);
                     draw (win, buf, getmaxx (win), scroll_pos);

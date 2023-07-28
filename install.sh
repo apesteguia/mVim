@@ -1,6 +1,6 @@
 #!/bin/bash
 
-bin_directory="$(cd "$(dirname "$0")/bin" && pwd)"
+bin_directory="$(cd "$(dirname "$0")/program" && pwd)"
 
 install_directory="/usr/local/bin"
 
