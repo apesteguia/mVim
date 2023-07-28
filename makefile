@@ -4,7 +4,7 @@ LDFLAGS = -lncurses -lmenu
 
 SRCDIR = src
 OBJDIR = obj
-BINDIR = bin
+BINDIR = program
 
 SRC = $(wildcard $(SRCDIR)/*.c)
 OBJ = $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)

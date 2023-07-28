@@ -12,11 +12,17 @@ void
 main_loop (int argc, char *argv)
 {
     WINDOW *win, *explorer;
+    Mouse *m;
     Buffer *buf;
     int max_x, max_y, scroll_pos;
     char *res;
 
     max_x = max_y = scroll_pos = 0;
+    m = malloc (sizeof (Mouse));
+    m->x = 5;
+    m->y = 1;
+    m->col = 0;
+    m->row = 0;
 
     if (argc == 1)
         {
@@ -38,6 +44,8 @@ main_loop (int argc, char *argv)
             switch (ch)
                 {
                 case ' ':
+                    m->x = 4;
+                    m->y = 1;
                     scroll_pos = 0;
                     res = create_explorer (win, buf, getmaxx (win),
                                            scroll_pos);
@@ -65,9 +73,43 @@ main_loop (int argc, char *argv)
                         {
                             delete_explorer (explorer);
                         }
-                    /*scroll_pos = 0;
-                    res = create_explorer (win, buf, getmaxx (win),
-                                           scroll_pos); */
+                /*scroll_pos = 0;
+                res = create_explorer (win, buf, getmaxx (win),
+                                       scroll_pos); */
+                case 'w':
+                    if (m->y > 0)
+                        {
+                            m->y--;
+                            wmove (win, m->y, m->x);
+                            wrefresh (win);
+                            m->col--;
+                        }
+                    break;
+                case 's':
+                    if (m->y < max_y - 2)
+                        {
+                            m->y++;
+                            wmove (win, m->y, m->x);
+                            wrefresh (win);
+                            m->col++;
+                        }
+                    break;
+                case 'a':
+                    if (m->x < 6)
+                        m->x = 6;
+                    m->x--;
+                    wmove (win, m->y, m->x);
+                    wrefresh (win);
+                    m->row--;
+                    break;
+                case 'd':
+                    if (m->x > max_x)
+                        m->x -= 2;
+                    m->x++;
+                    wmove (win, m->y, m->x);
+                    wrefresh (win);
+                    m->row++;
+                    break;
                 case 'k':
                     if (scroll_pos > 0)
                         {
@@ -133,6 +175,8 @@ main_loop (int argc, char *argv)
                 default:
                     print_title (win, argv);
                     print_keys (win);
+                    wrefresh (win);
+
                     break;
                 }
         }
@@ -253,7 +297,7 @@ create_explorer (WINDOW *w, Buffer *buf, int max_x, int start_line)
                     strcpy (res, dirs[dir_index]);
                     return res;
                     break;
-                case 'd':
+                case 'g':
                     menu_driver (menu, REQ_UP_ITEM);
                     if (dir_index > 0)
                         dir_index--;
@@ -352,7 +396,7 @@ init_window ()
     cbreak ();
     noecho ();
     start_color ();
-    curs_set (0);
+    curs_set (1);
     init_pair (1, COLOR_WHITE, COLOR_BLACK);
     refresh ();
 }

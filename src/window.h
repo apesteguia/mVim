@@ -23,6 +23,14 @@ typedef struct buffer
     int curr_line;
 } Buffer;
 
+typedef struct mouse
+{
+    int x;
+    int y;
+    int col;
+    int row;
+} Mouse;
+
 WINDOW *new_window (char *);
 void main_loop (int, char *);
 char *create_explorer (WINDOW *w, Buffer *, int, int);
