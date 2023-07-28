@@ -27,8 +27,8 @@ typedef struct mouse
 {
     int x;
     int y;
-    int col;
     int row;
+    int col;
 } Mouse;
 
 WINDOW *new_window (char *);

@@ -3,10 +3,54 @@
 #include <dirent.h>
 #include <menu.h>
 #include <ncurses.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+bool
+is_line_spaces (char *line)
+{
+    int i = 0;
+    int len = strlen (line);
+    while (line[i] == ' ')
+        {
+            i++;
+        }
+    return i == len;
+}
+
+void
+remove_char (Buffer **buf, Mouse *m)
+{
+    Line *current_line = (*buf)->head;
+    bool b;
+
+    for (int i = 0; i < m->col && current_line; i++)
+        {
+            current_line = current_line->next;
+        }
+
+    if (current_line)
+        {
+            int len = strlen (current_line->content);
+
+            b = is_line_spaces (current_line->content);
+
+            if (b)
+                return;
+
+            if (m->row >= 0 && m->row < len)
+                {
+                    for (int i = m->row; i < len; i++)
+                        {
+                            current_line->content[i]
+                                = current_line->content[i + 1];
+                        }
+                }
+        }
+}
 
 void
 main_loop (int argc, char *argv)
@@ -73,16 +117,28 @@ main_loop (int argc, char *argv)
                         {
                             delete_explorer (explorer);
                         }
-                /*scroll_pos = 0;
-                res = create_explorer (win, buf, getmaxx (win),
-                                       scroll_pos); */
+                    /*scroll_pos = 0;
+                    res = create_explorer (win, buf, getmaxx (win),
+                                           scroll_pos); */
+                case KEY_BACKSPACE:
+                    remove_char (&buf, m);
+                    draw (win, buf, getmaxx (win), scroll_pos);
+                    // wmove (win, m->y, m->x--);
+                    break;
                 case 'w':
-                    if (m->y > 0)
+                    if (m->y > 1)
                         {
                             m->y--;
                             wmove (win, m->y, m->x);
                             wrefresh (win);
-                            m->col--;
+                        }
+                    if (m->col < 0)
+                        m->col = 0;
+                    else
+                        m->col--;
+                    if (m->y < 1)
+                        {
+                            m->y = 1;
                         }
                     break;
                 case 's':
@@ -91,8 +147,11 @@ main_loop (int argc, char *argv)
                             m->y++;
                             wmove (win, m->y, m->x);
                             wrefresh (win);
-                            m->col++;
                         }
+                    if (m->col > max_y)
+                        m->col = max_y;
+                    else
+                        m->col++;
                     break;
                 case 'a':
                     if (m->x < 6)
@@ -100,7 +159,10 @@ main_loop (int argc, char *argv)
                     m->x--;
                     wmove (win, m->y, m->x);
                     wrefresh (win);
-                    m->row--;
+                    if (m->row < 0)
+                        m->row = 0;
+                    else
+                        m->row--;
                     break;
                 case 'd':
                     if (m->x > max_x)
@@ -108,7 +170,10 @@ main_loop (int argc, char *argv)
                     m->x++;
                     wmove (win, m->y, m->x);
                     wrefresh (win);
-                    m->row++;
+                    if (m->row > max_x - 2)
+                        m->row = max_x - 3;
+                    else
+                        m->row++;
                     break;
                 case 'k':
                     if (scroll_pos > 0)
