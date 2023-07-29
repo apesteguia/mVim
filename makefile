@@ -8,7 +8,7 @@ BINDIR = program
 
 SRC = $(wildcard $(SRCDIR)/*.c)
 OBJ = $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
-EXECUTABLE = $(BINDIR)/msee
+EXECUTABLE = $(BINDIR)/mvim
 
 all: msee 
 

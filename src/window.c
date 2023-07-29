@@ -169,6 +169,29 @@ write_char (Buffer **buf, Mouse *m, char c)
 }
 */
 void
+staus_line (Buffer *buf, char *mode, char *path, int current_line)
+{
+    int x, y;
+    x = y = 0;
+
+    init_pair (4, COLOR_BLACK, COLOR_BLUE);
+    init_pair (5, COLOR_BLUE, COLOR_BLACK);
+    wattron (stdscr, COLOR_PAIR (4) | A_BOLD);
+    getmaxyx (stdscr, y, x);
+    mvprintw (y - 2, 1, "  %s  ", mode);
+    wattroff (stdscr, COLOR_PAIR (4) | A_BOLD);
+
+    wattron (stdscr, COLOR_PAIR (5) | A_BOLD);
+    mvprintw (y - 2, 12, "%s", path);
+
+    mvprintw (y - 2, x - 30, " line: %d", current_line);
+    wattroff (stdscr, COLOR_PAIR (5) | A_BOLD);
+
+    wattron (stdscr, COLOR_PAIR (4) | A_BOLD);
+    mvprintw (y - 2, x - 20, " total lines: %d ", buf->n);
+    wattroff (stdscr, COLOR_PAIR (4) | A_BOLD);
+}
+void
 main_loop (int argc, char *argv)
 {
     WINDOW *win, *explorer;
@@ -195,7 +218,8 @@ main_loop (int argc, char *argv)
     win = new_window (argv);
     buf = load_file (win, argv, max_x);
     draw (win, buf, getmaxx (win), 0);
-    print_keys (win);
+    staus_line (buf, "NORMAL", argv, m->col);
+    // print_keys (win);
     print_title (win, argv);
 
     int ch = 'j';
@@ -220,7 +244,8 @@ main_loop (int argc, char *argv)
                                 getmaxx (win)); // Load the selected file
                             draw (win, buf, getmaxx (win), scroll_pos);
                             clear ();
-                            print_keys (win);
+                            staus_line (buf, "NORMAL", argv, m->col);
+                            // print_keys (win);
                             strcpy (argv, res);
                             print_title (win, argv);
                             free (res);
@@ -239,8 +264,12 @@ main_loop (int argc, char *argv)
                                            scroll_pos); */
 
                 case 'i':
+                    staus_line (buf, "INSERT", argv, m->col);
+                    wrefresh (win);
                     while ((ch2 = getch ()) != 27)
                         {
+
+                            staus_line (buf, "INSERT", argv, m->col);
                             switch (ch2)
                                 {
                                 case 10:
@@ -359,7 +388,8 @@ main_loop (int argc, char *argv)
                     endwin ();
                     refresh ();
                     win = new_window (argv);
-                    print_keys (win);
+                    // print_keys (win);
+                    staus_line (buf, "NORMAL", argv, m->col);
                     draw (win, buf, getmaxx (win), scroll_pos);
                     print_title (win, argv);
                     break;
@@ -368,7 +398,8 @@ main_loop (int argc, char *argv)
                     endwin ();
                     refresh ();
                     win = new_window (argv);
-                    print_keys (win);
+                    staus_line (buf, "NORMAL", argv, m->col);
+                    // print_keys (win);
                     draw (win, buf, getmaxx (win), scroll_pos);
                     print_title (win, argv);
                     break;
@@ -378,13 +409,14 @@ main_loop (int argc, char *argv)
                     endwin ();
                     refresh ();
                     win = new_window (argv);
-                    print_keys (win);
+                    staus_line (buf, "NORMAL", argv, m->col);
+                    // print_keys (win);
                     draw (win, buf, getmaxx (win), scroll_pos);
                     print_title (win, argv);
                     break;
                 default:
                     print_title (win, argv);
-                    print_keys (win);
+                    staus_line (buf, "NORMAL", argv, m->col);
                     wrefresh (win);
 
                     break;
@@ -590,8 +622,8 @@ print_keys (WINDOW *win)
     int x, y;
     x = y = 0;
 
-    init_pair (3, COLOR_BLUE, COLOR_BLACK);
-    wattron (stdscr, COLOR_PAIR (3) | A_BOLD);
+    init_pair (4, COLOR_BLACK, COLOR_BLUE);
+    wattron (stdscr, COLOR_PAIR (4) | A_BOLD);
     getmaxyx (stdscr, y, x);
     mvprintw (y - 2, 1, "%s",
               "r: refresh | j,J: 1up/10 | k,K: 1down/10 | q: quit");
