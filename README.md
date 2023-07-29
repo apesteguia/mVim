@@ -5,3 +5,4 @@ A basic and minimal terminal based text editor, written in C.
 ![Screenshot](msee.png)
 
 ## Also it has a full functional file explorer!
+![Screenshot](explorer.png)
