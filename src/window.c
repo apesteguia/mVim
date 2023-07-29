@@ -42,6 +42,7 @@ remove_char (Buffer **buf, Mouse *m)
 {
     Line *current_line = (*buf)->head;
     bool b;
+    int len;
 
     for (int i = 0; i < m->col && current_line; i++)
         {
@@ -50,7 +51,7 @@ remove_char (Buffer **buf, Mouse *m)
 
     if (current_line)
         {
-            int len = strlen (current_line->content);
+            len = strlen (current_line->content);
 
             b = is_line_spaces (current_line->content);
 
@@ -68,6 +69,105 @@ remove_char (Buffer **buf, Mouse *m)
         }
 }
 
+void
+write_char (Buffer **buf, Mouse *m, char c)
+{
+    if (*buf == NULL)
+        return;
+
+    Line *current_line = (*buf)->head;
+    int line_num = 0;
+
+    // Move to the target line
+    while (current_line != NULL && line_num < m->row)
+        {
+            current_line = current_line->next;
+            line_num++;
+        }
+
+    if (current_line)
+        {
+            int len = strlen (current_line->content);
+
+            if (m->col >= 0 && m->col <= len)
+                {
+                    if (len >= MAXLEN - 2)
+                        return; // The line is already full, cannot insert more
+                                // characters
+
+                    // Shift the characters to the right to make space for the
+                    // new character
+                    for (int i = len; i >= m->col; i--)
+                        {
+                            current_line->content[i + 1]
+                                = current_line->content[i];
+                        }
+
+                    current_line->content[m->col] = c;
+                    current_line->content[len + 1]
+                        = '\0'; // Null-terminate the string
+
+                    // Update cursor position after writing a character
+                    m->col++;
+                }
+        }
+}
+
+/*void
+write_char (Buffer **buf, Mouse *m, char c)
+{
+    Line *current_line = (*buf)->head;
+
+    for (int i = 0; i < m->col && current_line; i++)
+        {
+            current_line = current_line->next;
+        }
+
+    if (current_line)
+        {
+            int len = strlen (current_line->content);
+
+            if (m->row >= 0 && m->row <= len)
+                {
+                    for (int i = len; i > m->row; i--)
+                        {
+                            current_line->content[i]
+                                = current_line->content[i - 1];
+                        }
+
+                    current_line->content[m->row] = c;
+                    current_line->content[len + 1]
+                        = '\0'; // Null-terminate the string
+                }
+        }
+} */
+
+/*
+void
+write_char (Buffer **buf, Mouse *m, char c)
+{
+    Line *current_line = (*buf)->head;
+    bool b;
+    int len;
+
+    for (int i = 0; i < m->col && current_line; i++)
+        {
+            current_line = current_line->next;
+        }
+
+    if (current_line)
+        {
+            len = strlen (current_line->content);
+            if (m->row >= 0 && m->row < len)
+                {
+                    for (int i = m->row; i < len; i++)
+                        {
+                            current_line->content[i] = c;
+                        }
+                }
+        }
+}
+*/
 void
 main_loop (int argc, char *argv)
 {
@@ -99,6 +199,7 @@ main_loop (int argc, char *argv)
     print_title (win, argv);
 
     int ch = 'j';
+    int ch2;
     while ((ch = getch ()) != 'q' || res != NULL)
         {
             switch (ch)
@@ -136,6 +237,32 @@ main_loop (int argc, char *argv)
                     /*scroll_pos = 0;
                     res = create_explorer (win, buf, getmaxx (win),
                                            scroll_pos); */
+
+                case 'i':
+                    while ((ch2 = getch ()) != 27)
+                        {
+                            switch (ch2)
+                                {
+                                case 10:
+                                    break;
+                                case KEY_BACKSPACE:
+                                    if (m->row > 0)
+                                        {
+                                            m->row--;
+                                            remove_char (&buf, m);
+                                            draw (win, buf, getmaxx (win),
+                                                  scroll_pos);
+                                        }
+                                    break;
+                                default:
+                                    write_char (&buf, m, ch2);
+                                    m->row++; // Move to the next column after
+                                              // writing a character
+                                    draw (win, buf, getmaxx (win), scroll_pos);
+                                    break;
+                                }
+                        }
+                    break;
                 case 'c':
                     write_file (buf, argv);
                 case KEY_BACKSPACE:
@@ -490,6 +617,64 @@ end_window (WINDOW *win)
     endwin ();
 }
 
+void
+fill_line (char *line)
+{
+    int len = strlen (line);
+    for (int i = len; i < MAXLEN - 1; i++)
+        {
+            line[i] = ' ';
+        }
+    line[MAXLEN - 1] = '\0';
+}
+
+Buffer *
+load_file (WINDOW *win, char *path, int max_x)
+{
+    FILE *f;
+    Line *l;
+    Buffer *buf;
+    char c;
+
+    f = fopen (path, "r");
+    if (f == NULL)
+        {
+            mvwprintw (win, 0, 0,
+                       "Error: File not found or cannot be opened.");
+            wrefresh (win);
+            return NULL;
+        }
+
+    buf = malloc (sizeof (Buffer));
+    buf->n = 0;
+    buf->curr_line = 0;
+    buf->head = malloc (sizeof (Line));
+    buf->head->prev = buf->head->next = NULL;
+    buf->curr = buf->head;
+
+    while (fgets (buf->curr->content, MAXLEN, f))
+        {
+            buf->curr->next
+                = malloc (sizeof (Line)); // Allocate memory for the next line
+            buf->curr->next->prev = buf->curr;
+            buf->curr = buf->curr->next;
+            buf->n++;
+        }
+    buf->curr->next = NULL; // Mark the end of the buffer
+
+    // Now, after reading the file, we can fill each line with spaces.
+    buf->curr = buf->head; // Move back to the beginning of the buffer
+    while (buf->curr)
+        {
+            fill_line (buf->curr->content);
+            buf->curr = buf->curr->next;
+        }
+
+    fclose (f);
+    return buf; // Return the created Buffer*
+}
+
+/*
 Buffer *
 load_file (WINDOW *win, char *path, int max_x)
 {
@@ -517,6 +702,7 @@ load_file (WINDOW *win, char *path, int max_x)
     while (fgets (buf->curr->content, MAXLEN, f))
         {
             l = malloc (sizeof (Line));
+            fill_line (buf->curr->content);
             l->prev = buf->curr;
             buf->curr->next = l;
             buf->curr = l;
@@ -526,7 +712,7 @@ load_file (WINDOW *win, char *path, int max_x)
 
     fclose (f);
     return buf; // Return the created Buffer*
-}
+}  */
 
 void
 draw (WINDOW *win, Buffer *buf, int max_x, int start_line)
