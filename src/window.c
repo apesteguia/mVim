@@ -95,19 +95,7 @@ write_char (Buffer **buf, Mouse *m, char c)
                         return; // The line is already full, cannot insert more
                                 // characters
 
-                    // Shift the characters to the right to make space for the
-                    // new character
-                    for (int i = len; i >= m->col; i--)
-                        {
-                            current_line->content[i + 1]
-                                = current_line->content[i];
-                        }
-
                     current_line->content[m->col] = c;
-                    current_line->content[len + 1]
-                        = '\0'; // Null-terminate the string
-
-                    // Update cursor position after writing a character
                     m->col++;
                 }
         }
@@ -218,7 +206,7 @@ main_loop (int argc, char *argv)
     win = new_window (argv);
     buf = load_file (win, argv, max_x);
     draw (win, buf, getmaxx (win), 0);
-    staus_line (buf, "NORMAL", argv, m->col);
+    staus_line (buf, "NORMAL", argv, m->row);
     // print_keys (win);
     print_title (win, argv);
 
@@ -244,7 +232,7 @@ main_loop (int argc, char *argv)
                                 getmaxx (win)); // Load the selected file
                             draw (win, buf, getmaxx (win), scroll_pos);
                             clear ();
-                            staus_line (buf, "NORMAL", argv, m->col);
+                            staus_line (buf, "NORMAL", argv, m->row);
                             // print_keys (win);
                             strcpy (argv, res);
                             print_title (win, argv);
@@ -264,16 +252,19 @@ main_loop (int argc, char *argv)
                                            scroll_pos); */
 
                 case 'i':
-                    staus_line (buf, "INSERT", argv, m->col);
+                    staus_line (buf, "INSERT", argv, m->row);
                     wrefresh (win);
                     while ((ch2 = getch ()) != 27)
                         {
 
-                            staus_line (buf, "INSERT", argv, m->col);
+                            staus_line (buf, "INSERT", argv, m->row);
                             switch (ch2)
                                 {
                                 case 10:
-                                    break;
+                                    staus_line (buf, "NORMAL", argv, m->row);
+                                    wrefresh (win);
+                                    switch (ch2)
+                                        break;
                                 case KEY_BACKSPACE:
                                     if (m->row > 0)
                                         {
@@ -298,56 +289,60 @@ main_loop (int argc, char *argv)
                     remove_char (&buf, m);
                     draw (win, buf, getmaxx (win), scroll_pos);
                     // wmove (win, m->y, m->x--);
+                    staus_line (buf, "NORMAL", argv, m->row);
+                    wrefresh (stdscr);
                     break;
                 case 'w':
                     if (m->y > 1)
                         {
                             m->y--;
+                            if (m->row > 0)
+                                m->row--;
                             wmove (win, m->y, m->x);
                             wrefresh (win);
                         }
-                    if (m->col < 0)
-                        m->col = 0;
-                    else
-                        m->col--;
-                    if (m->y < 1)
-                        {
-                            m->y = 1;
-                        }
+                    staus_line (buf, "NORMAL", argv, m->row);
+                    wrefresh (stdscr);
+                    wrefresh (win);
                     break;
                 case 's':
                     if (m->y < max_y - 2)
                         {
                             m->y++;
+                            if (m->row < buf->n)
+                                m->row++;
                             wmove (win, m->y, m->x);
                             wrefresh (win);
                         }
-                    if (m->col > max_y)
-                        m->col = max_y;
-                    else
-                        m->col++;
+                    staus_line (buf, "NORMAL", argv, m->row);
+                    wrefresh (stdscr);
+                    wrefresh (win);
                     break;
                 case 'a':
-                    if (m->x < 6)
-                        m->x = 6;
-                    m->x--;
-                    wmove (win, m->y, m->x);
+                    if (m->x > 6)
+                        {
+                            m->x--;
+                            if (m->col > 0)
+                                m->col--;
+                            wmove (win, m->y, m->x);
+                            wrefresh (win);
+                        }
+                    staus_line (buf, "NORMAL", argv, m->row);
+                    wrefresh (stdscr);
                     wrefresh (win);
-                    if (m->row < 0)
-                        m->row = 0;
-                    else
-                        m->row--;
                     break;
                 case 'd':
-                    if (m->x > max_x)
-                        m->x -= 2;
-                    m->x++;
-                    wmove (win, m->y, m->x);
+                    if (m->x < max_x - 1)
+                        {
+                            m->x++;
+                            if (m->col < buf->n)
+                                m->col++;
+                            wmove (win, m->y, m->x);
+                            wrefresh (win);
+                        }
+                    staus_line (buf, "NORMAL", argv, m->row);
+                    wrefresh (stdscr);
                     wrefresh (win);
-                    if (m->row > max_x - 2)
-                        m->row = max_x - 3;
-                    else
-                        m->row++;
                     break;
                 case 'k':
                     if (scroll_pos > 0)
@@ -389,7 +384,8 @@ main_loop (int argc, char *argv)
                     refresh ();
                     win = new_window (argv);
                     // print_keys (win);
-                    staus_line (buf, "NORMAL", argv, m->col);
+                    staus_line (buf, "NORMAL", argv, m->row);
+                    wrefresh (stdscr);
                     draw (win, buf, getmaxx (win), scroll_pos);
                     print_title (win, argv);
                     break;
@@ -398,7 +394,8 @@ main_loop (int argc, char *argv)
                     endwin ();
                     refresh ();
                     win = new_window (argv);
-                    staus_line (buf, "NORMAL", argv, m->col);
+                    staus_line (buf, "NORMAL", argv, m->row);
+                    wrefresh (stdscr);
                     // print_keys (win);
                     draw (win, buf, getmaxx (win), scroll_pos);
                     print_title (win, argv);
@@ -409,14 +406,15 @@ main_loop (int argc, char *argv)
                     endwin ();
                     refresh ();
                     win = new_window (argv);
-                    staus_line (buf, "NORMAL", argv, m->col);
+                    staus_line (buf, "NORMAL", argv, m->row);
                     // print_keys (win);
                     draw (win, buf, getmaxx (win), scroll_pos);
                     print_title (win, argv);
                     break;
                 default:
                     print_title (win, argv);
-                    staus_line (buf, "NORMAL", argv, m->col);
+                    staus_line (buf, "NORMAL", argv, m->row);
+                    wrefresh (stdscr);
                     wrefresh (win);
 
                     break;
@@ -610,9 +608,9 @@ new_window (char *file)
 void
 print_title (WINDOW *win, char *file)
 {
-    init_pair (3, COLOR_BLUE, COLOR_BLACK);
+    init_pair (3, COLOR_BLACK, COLOR_BLUE);
     wattron (stdscr, COLOR_PAIR (3) | A_BOLD);
-    mvprintw (1, 1, "%s", file);
+    mvprintw (1, 1, "  %s  ", file);
     wattroff (stdscr, COLOR_PAIR (3) | A_BOLD);
 }
 
