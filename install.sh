@@ -4,17 +4,17 @@ bin_directory="$(cd "$(dirname "$0")/program" && pwd)"
 
 install_directory="/usr/local/bin"
 
-if [ -x "$install_directory/msee" ]; then
-    echo "msee is already installed in $install_directory"
+if [ -x "$install_directory/mvim" ]; then
+    echo "mvim is already installed in $install_directory"
 else
-    if [ -x "$bin_directory/msee" ]; then
-        sudo mv "$bin_directory/msee" "$install_directory"
+    if [ -x "$bin_directory/mvim" ]; then
+        sudo mv "$bin_directory/mvim" "$install_directory"
     
-        sudo chmod +x "$install_directory/msee"
+        sudo chmod +x "$install_directory/mvim"
     
-        echo "msee has been installed in $install_directory"
+        echo "mvim has been installed in $install_directory"
     else
-        echo "Error: msee executable not found in the bin directory."
+        echo "Error: mvim executable not found in the bin directory."
     fi
 fi
 
