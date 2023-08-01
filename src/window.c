@@ -36,7 +36,6 @@ is_line_spaces (char *line)
         }
     return i == len;
 }
-
 void
 remove_char (Buffer **buf, Mouse *m)
 {
@@ -56,7 +55,12 @@ remove_char (Buffer **buf, Mouse *m)
             b = is_line_spaces (current_line->content);
 
             if (b)
-                return;
+                {
+                    mvprintw (1, 1, "%s", "line space");
+                    sleep (2);
+                    wrefresh (stdscr);
+                    return;
+                }
 
             if (m->row >= 0 && m->row < len)
                 {
@@ -153,7 +157,8 @@ write_char (Buffer **buf, Mouse *m, char c)
 }
 */
 void
-staus_line (Buffer *buf, char *mode, char *path, int current_line)
+staus_line (Buffer *buf, char *mode, char *path, int current_line,
+            int current_char)
 {
     int x, y;
     x = y = 0;
@@ -167,6 +172,8 @@ staus_line (Buffer *buf, char *mode, char *path, int current_line)
 
     wattron (stdscr, COLOR_PAIR (5) | A_BOLD);
     mvprintw (y - 2, 12, "%s", path);
+
+    mvprintw (y - 2, x - 50, " char: %d", current_char);
 
     mvprintw (y - 2, x - 30, " line: %d", current_line);
     wattroff (stdscr, COLOR_PAIR (5) | A_BOLD);
@@ -202,7 +209,7 @@ main_loop (int argc, char *argv)
     win = new_window (argv);
     buf = load_file (win, argv, max_x);
     draw (win, buf, getmaxx (win), 0);
-    staus_line (buf, "NORMAL", argv, m->row);
+    staus_line (buf, "NORMAL", argv, m->row, m->col);
     // print_keys (win);
     print_title (win, argv);
 
@@ -228,7 +235,7 @@ main_loop (int argc, char *argv)
                                 getmaxx (win)); // Load the selected file
                             draw (win, buf, getmaxx (win), scroll_pos);
                             clear ();
-                            staus_line (buf, "NORMAL", argv, m->row);
+                            staus_line (buf, "NORMAL", argv, m->row, m->col);
                             // print_keys (win);
                             strcpy (argv, res);
                             print_title (win, argv);
@@ -248,23 +255,23 @@ main_loop (int argc, char *argv)
                                            scroll_pos); */
 
                 case 'i':
-                    staus_line (buf, "INSERT", argv, m->row);
+                    staus_line (buf, "INSERT", argv, m->row, m->col);
                     wrefresh (win);
                     while ((ch2 = getch ()) != 27)
                         {
 
-                            staus_line (buf, "INSERT", argv, m->row);
+                            staus_line (buf, "INSERT", argv, m->row, m->col);
                             switch (ch2)
                                 {
                                 case 10:
-                                    staus_line (buf, "NORMAL", argv, m->row);
+                                    staus_line (buf, "NORMAL", argv, m->row,
+                                                m->col);
                                     wrefresh (win);
                                     switch (ch2)
                                         break;
                                 case KEY_BACKSPACE:
                                     if (m->row > 0)
                                         {
-                                            m->row--;
                                             remove_char (&buf, m);
                                             draw (win, buf, getmaxx (win),
                                                   scroll_pos);
@@ -282,8 +289,7 @@ main_loop (int argc, char *argv)
                 case KEY_BACKSPACE:
                     remove_char (&buf, m);
                     draw (win, buf, getmaxx (win), scroll_pos);
-                    // wmove (win, m->y, m->x--);
-                    staus_line (buf, "NORMAL", argv, m->row);
+                    staus_line (buf, "NORMAL", argv, m->row, m->col);
                     wrefresh (stdscr);
                     break;
                 case 'w':
@@ -295,7 +301,7 @@ main_loop (int argc, char *argv)
                             wmove (win, m->y, m->x);
                             wrefresh (win);
                         }
-                    staus_line (buf, "NORMAL", argv, m->row);
+                    staus_line (buf, "NORMAL", argv, m->row, m->col);
                     wrefresh (stdscr);
                     wrefresh (win);
                     break;
@@ -308,7 +314,7 @@ main_loop (int argc, char *argv)
                             wmove (win, m->y, m->x);
                             wrefresh (win);
                         }
-                    staus_line (buf, "NORMAL", argv, m->row);
+                    staus_line (buf, "NORMAL", argv, m->row, m->col);
                     wrefresh (stdscr);
                     wrefresh (win);
                     break;
@@ -321,7 +327,7 @@ main_loop (int argc, char *argv)
                             wmove (win, m->y, m->x);
                             wrefresh (win);
                         }
-                    staus_line (buf, "NORMAL", argv, m->row);
+                    staus_line (buf, "NORMAL", argv, m->row, m->col);
                     wrefresh (stdscr);
                     wrefresh (win);
                     break;
@@ -334,7 +340,7 @@ main_loop (int argc, char *argv)
                             wmove (win, m->y, m->x);
                             wrefresh (win);
                         }
-                    staus_line (buf, "NORMAL", argv, m->row);
+                    staus_line (buf, "NORMAL", argv, m->row, m->col);
                     wrefresh (stdscr);
                     wrefresh (win);
                     break;
@@ -378,7 +384,7 @@ main_loop (int argc, char *argv)
                     refresh ();
                     win = new_window (argv);
                     // print_keys (win);
-                    staus_line (buf, "NORMAL", argv, m->row);
+                    staus_line (buf, "NORMAL", argv, m->row, m->col);
                     wrefresh (stdscr);
                     draw (win, buf, getmaxx (win), scroll_pos);
                     print_title (win, argv);
@@ -388,7 +394,7 @@ main_loop (int argc, char *argv)
                     endwin ();
                     refresh ();
                     win = new_window (argv);
-                    staus_line (buf, "NORMAL", argv, m->row);
+                    staus_line (buf, "NORMAL", argv, m->row, m->col);
                     wrefresh (stdscr);
                     // print_keys (win);
                     draw (win, buf, getmaxx (win), scroll_pos);
@@ -400,14 +406,14 @@ main_loop (int argc, char *argv)
                     endwin ();
                     refresh ();
                     win = new_window (argv);
-                    staus_line (buf, "NORMAL", argv, m->row);
+                    staus_line (buf, "NORMAL", argv, m->row, m->col);
                     // print_keys (win);
                     draw (win, buf, getmaxx (win), scroll_pos);
                     print_title (win, argv);
                     break;
                 default:
                     print_title (win, argv);
-                    staus_line (buf, "NORMAL", argv, m->row);
+                    staus_line (buf, "NORMAL", argv, m->row, m->col);
                     wrefresh (stdscr);
                     wrefresh (win);
 
