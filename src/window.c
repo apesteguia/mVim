@@ -26,7 +26,7 @@ write_file (Buffer *buf, char *path)
 }
 
 void
-newLine (Buffer **buf)
+new_line (WINDOW *win, Buffer **buf)
 {
     Line *current_line = (*buf)->head;
     Line *new = malloc (sizeof (Line));
@@ -42,6 +42,9 @@ newLine (Buffer **buf)
     new->prev = current_line;
     current_line->next = new;
     (*buf)->n++;
+
+    draw (win, *buf, getmaxx (win), 0);
+    wrefresh (win);
 }
 
 bool
@@ -282,16 +285,16 @@ main_loop (int argc, char *argv)
                             switch (ch2)
                                 {
                                 case KEY_ENTER:
-                                    newLine (&buf);
+                                    new_line (win, &buf);
                                     draw (win, buf, getmaxx (win), scroll_pos);
                                     wrefresh (win);
                                     break;
                                 case 10:
-                                    staus_line (buf, "NORMAL", argv, m->row,
-                                                m->col);
+                                    new_line (win, &buf); // Create a new line
+                                                          // in the buffer
+                                    draw (win, buf, getmaxx (win), scroll_pos);
                                     wrefresh (win);
-                                    switch (ch2)
-                                        break;
+                                    break;
                                 case KEY_BACKSPACE:
                                     if (m->row > 0)
                                         {
@@ -426,12 +429,11 @@ main_loop (int argc, char *argv)
                     break;
 
                 case 'r':
-                    delete_explorer (explorer);
+                    // delete_explorer (explorer);
                     endwin ();
                     refresh ();
                     win = new_window (argv);
                     staus_line (buf, "NORMAL", argv, m->row, m->col);
-                    // print_keys (win);
                     draw (win, buf, getmaxx (win), scroll_pos);
                     print_title (win, argv);
                     break;
@@ -745,7 +747,6 @@ draw (WINDOW *win, Buffer *buf, int max_x, int start_line)
         {
             wmove (win, y, 0);
 
-            // Print line number and content
             mvwprintw (win, y, 0, "%3d  %s", line_number,
                        current_line->content);
 
