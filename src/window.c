@@ -306,7 +306,7 @@ main_loop (int argc, char *argv)
                     wrefresh (win);
                     break;
                 case 's':
-                    if (m->y < max_y - 2)
+                    if (m->y < buf->n)
                         {
                             m->y++;
                             if (m->row < buf->n)
