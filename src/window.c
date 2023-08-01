@@ -91,10 +91,6 @@ write_char (Buffer **buf, Mouse *m, char c)
 
             if (m->col >= 0 && m->col <= len)
                 {
-                    if (len >= MAXLEN - 2)
-                        return; // The line is already full, cannot insert more
-                                // characters
-
                     current_line->content[m->col] = c;
                     m->col++;
                 }
@@ -276,8 +272,6 @@ main_loop (int argc, char *argv)
                                     break;
                                 default:
                                     write_char (&buf, m, ch2);
-                                    m->row++; // Move to the next column after
-                                              // writing a character
                                     draw (win, buf, getmaxx (win), scroll_pos);
                                     break;
                                 }
