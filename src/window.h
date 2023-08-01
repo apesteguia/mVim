@@ -43,5 +43,6 @@ Buffer *load_file (WINDOW *, char *, int);
 void scrollWindow (WINDOW *, int *);
 void draw (WINDOW *, Buffer *, int, int);
 void free_buffer (Buffer *);
+void fill_line(char *);
 
 #endif // MAG_EDITOR_H

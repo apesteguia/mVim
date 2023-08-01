@@ -25,6 +25,25 @@ write_file (Buffer *buf, char *path)
     fclose (f);
 }
 
+void
+newLine (Buffer **buf)
+{
+    Line *current_line = (*buf)->head;
+    Line *new = malloc (sizeof (Line));
+
+    while (current_line->next != NULL)
+        {
+            current_line = current_line->next;
+        }
+
+    fill_line (new->content);
+    new->n = MAXLEN;
+    new->next = NULL;
+    new->prev = current_line;
+    current_line->next = new;
+    (*buf)->n++;
+}
+
 bool
 is_line_spaces (char *line)
 {
@@ -36,6 +55,7 @@ is_line_spaces (char *line)
         }
     return i == len;
 }
+
 void
 remove_char (Buffer **buf, Mouse *m)
 {
@@ -56,9 +76,6 @@ remove_char (Buffer **buf, Mouse *m)
 
             if (b)
                 {
-                    mvprintw (1, 1, "%s", "line space");
-                    sleep (2);
-                    wrefresh (stdscr);
                     return;
                 }
 
@@ -188,10 +205,10 @@ main_loop (int argc, char *argv)
     WINDOW *win, *explorer;
     Mouse *m;
     Buffer *buf;
-    int max_x, max_y, scroll_pos;
+    int max_x, max_y, scroll_pos, mode;
     char *res;
 
-    max_x = max_y = scroll_pos = 0;
+    max_x = max_y = scroll_pos = mode = 0;
     m = malloc (sizeof (Mouse));
     m->x = 5;
     m->y = 1;
@@ -254,6 +271,7 @@ main_loop (int argc, char *argv)
                     res = create_explorer (win, buf, getmaxx (win),
                                            scroll_pos); */
 
+                    break;
                 case 'i':
                     staus_line (buf, "INSERT", argv, m->row, m->col);
                     wrefresh (win);
@@ -263,6 +281,11 @@ main_loop (int argc, char *argv)
                             staus_line (buf, "INSERT", argv, m->row, m->col);
                             switch (ch2)
                                 {
+                                case KEY_ENTER:
+                                    newLine (&buf);
+                                    draw (win, buf, getmaxx (win), scroll_pos);
+                                    wrefresh (win);
+                                    break;
                                 case 10:
                                     staus_line (buf, "NORMAL", argv, m->row,
                                                 m->col);
@@ -286,6 +309,7 @@ main_loop (int argc, char *argv)
                     break;
                 case 'c':
                     write_file (buf, argv);
+                    break;
                 case KEY_BACKSPACE:
                     remove_char (&buf, m);
                     draw (win, buf, getmaxx (win), scroll_pos);
@@ -684,16 +708,13 @@ load_file (WINDOW *win, char *path, int max_x)
 
     while (fgets (buf->curr->content, MAXLEN, f))
         {
-            buf->curr->next
-                = malloc (sizeof (Line)); // Allocate memory for the next line
+            buf->curr->next = malloc (sizeof (Line));
             buf->curr->next->prev = buf->curr;
             buf->curr = buf->curr->next;
             buf->n++;
         }
-    buf->curr->next = NULL; // Mark the end of the buffer
-
-    // Now, after reading the file, we can fill each line with spaces.
-    buf->curr = buf->head; // Move back to the beginning of the buffer
+    buf->curr->next = NULL;
+    buf->curr = buf->head;
     while (buf->curr)
         {
             fill_line (buf->curr->content);
@@ -701,48 +722,8 @@ load_file (WINDOW *win, char *path, int max_x)
         }
 
     fclose (f);
-    return buf; // Return the created Buffer*
+    return buf;
 }
-
-/*
-Buffer *
-load_file (WINDOW *win, char *path, int max_x)
-{
-    FILE *f;
-    Line *l;
-    Buffer *buf;
-    char c;
-
-    f = fopen (path, "r");
-    if (f == NULL)
-        {
-            mvwprintw (win, 0, 0,
-                       "Error: File not found or cannot be opened.");
-            wrefresh (win);
-            return NULL;
-        }
-
-    buf = malloc (sizeof (Buffer));
-    buf->n = 0;
-    buf->curr_line = 0;
-    buf->head = malloc (sizeof (Line));
-    buf->head->prev = buf->head->next = NULL;
-    buf->curr = buf->head;
-
-    while (fgets (buf->curr->content, MAXLEN, f))
-        {
-            l = malloc (sizeof (Line));
-            fill_line (buf->curr->content);
-            l->prev = buf->curr;
-            buf->curr->next = l;
-            buf->curr = l;
-            buf->n++;
-        }
-    buf->curr->next = NULL;
-
-    fclose (f);
-    return buf; // Return the created Buffer*
-}  */
 
 void
 draw (WINDOW *win, Buffer *buf, int max_x, int start_line)
